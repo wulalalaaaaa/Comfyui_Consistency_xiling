@@ -186,12 +186,69 @@ def try_vit_embedding(reference_image: torch.Tensor, model_name: str, use_pretra
         return {"status": "unavailable", "provider": "timm", "error": str(e)}
 
 
+def try_vit_embedding_with_checkpoint(
+    reference_image: torch.Tensor,
+    model_name: str,
+    use_pretrained: bool,
+    checkpoint_path: str,
+) -> Dict[str, Any]:
+    ckpt = str(checkpoint_path or "").strip()
+    if not ckpt:
+        return try_vit_embedding(reference_image, model_name, use_pretrained)
+
+    if reference_image is None or reference_image.numel() == 0:
+        return {"status": "skipped", "reason": "empty_image"}
+    sample = reference_image[0]
+    if sample.dim() != 3 or sample.shape[-1] != 3:
+        return {"status": "skipped", "reason": "invalid_image_shape"}
+
+    try:
+        import os
+        import timm  # type: ignore
+
+        exists = os.path.exists(ckpt)
+        if not exists:
+            return {"status": "unavailable", "provider": "timm", "error": f"checkpoint_not_found:{ckpt}"}
+
+        model = timm.create_model(
+            model_name.strip() or "vit_base_patch16_224",
+            pretrained=bool(use_pretrained),
+            checkpoint_path=ckpt,
+            num_classes=0,
+        )
+        model.eval()
+        x = sample.permute(2, 0, 1).unsqueeze(0).to(torch.float32)
+        x = torch.nn.functional.interpolate(x, size=(224, 224), mode="bilinear", align_corners=False)
+        with torch.no_grad():
+            feat = model(x)
+        feat = feat.reshape(-1).detach().cpu()
+        return {
+            "status": "ok",
+            "provider": "timm",
+            "embedding_dim": int(feat.numel()),
+            "embedding_preview": [round(float(v), 6) for v in feat[:8]],
+            "pretrained": bool(use_pretrained),
+            "checkpoint_path": ckpt,
+            "checkpoint_loaded": True,
+            "note": "embedding scaffold with manual checkpoint_path",
+        }
+    except Exception as e:
+        return {
+            "status": "unavailable",
+            "provider": "timm",
+            "checkpoint_path": ckpt,
+            "checkpoint_loaded": False,
+            "error": str(e),
+        }
+
+
 def run_local_vision_backend(
     reference_image: torch.Tensor,
     character_name: str,
     module_constraints: Dict[str, Any],
     model_name: str,
     use_pretrained: bool,
+    checkpoint_path: str,
 ) -> Dict[str, Any]:
     palette = palette_from_image(reference_image, top_k=6)
     inferred_global_tags = []
@@ -200,7 +257,12 @@ def run_local_vision_backend(
     if character_name.strip():
         inferred_global_tags.append(f"character:{character_name.strip()}")
 
-    vit_report = try_vit_embedding(reference_image, model_name=model_name, use_pretrained=use_pretrained)
+    vit_report = try_vit_embedding_with_checkpoint(
+        reference_image,
+        model_name=model_name,
+        use_pretrained=use_pretrained,
+        checkpoint_path=checkpoint_path,
+    )
     hair_color_profile = extract_hair_color_profile(reference_image, top_k=4)
 
     module_tags: Dict[str, List[str]] = {}
@@ -348,6 +410,7 @@ def run_character_backend(
     palette: List[str],
     local_model_name: str,
     local_use_pretrained: bool,
+    local_checkpoint_path: str,
     remote_api_url: str,
     remote_api_key: str,
     remote_api_model: str,
@@ -357,7 +420,14 @@ def run_character_backend(
 ) -> Dict[str, Any]:
     mode = (backend_mode or "placeholder").strip()
     if mode == "local_vision":
-        return run_local_vision_backend(reference_image, character_name, module_constraints, local_model_name, local_use_pretrained)
+        return run_local_vision_backend(
+            reference_image,
+            character_name,
+            module_constraints,
+            local_model_name,
+            local_use_pretrained,
+            local_checkpoint_path,
+        )
     if mode == "remote_api":
         return run_remote_api_backend(
             reference_image=reference_image,
@@ -373,4 +443,3 @@ def run_character_backend(
             extra_headers_json=remote_extra_headers_json,
         )
     return {"backend_mode": "placeholder", "status": "skipped", "summary": "backend execution disabled or placeholder mode selected"}
-

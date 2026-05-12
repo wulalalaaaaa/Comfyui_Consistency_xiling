@@ -21,11 +21,13 @@ It is designed so we can iteratively replace placeholder logic with methods insp
 - `nodes_character.py`: character analyzer node (includes backend controls).
 - `nodes_style.py`: style analyzer node.
 - `nodes_apply.py`: apply/control nodes.
-- `nodes_debug.py`: debug viewer node for JSON reports.
+- `nodes_debug.py`: debug viewer node for JSON reports and direct file save.
+- `nodes_prompt.py`: strong constraint prompt composer with per-module bool switches.
 - `backends.py`: local vision + remote API backend logic.
 - `color_features.py`: structured color analysis (hair profile).
 - `core_utils.py`: shared helpers.
 - `models.py`: dataclass schemas.
+- `LORA_NODE_DEVELOPMENT.md`: standalone LoRA training-node development brief.
 
 ## Node List
 
@@ -86,6 +88,25 @@ Local vision backend v1.1 notes:
   replace with trained/loaded vision weights
 - `local_backend_use_pretrained` can be enabled to try loading pretrained ViT weights
   (depends on local environment/model availability)
+- `local_backend_checkpoint_path` supports manual local checkpoint loading
+  (for timm models via `checkpoint_path`)
+  - this is optional; keep empty if you do not want to load a local checkpoint file
+
+## Strong Constraint Prompt (No File Required)
+
+Use `Character Constraint Prompt Composer [Modular v2]`:
+
+1. input `character_identity` from `Character Reference Analyzer`
+2. set bool switches per module:
+   - `enable_face_constraint`
+   - `enable_hair_constraint`
+   - `enable_outfit_constraint`
+   - `enable_body_constraint`
+   - `enable_accessory_constraint`
+3. output `composed_prompt` to `CLIPTextEncode.text`
+
+This path does not require local checkpoint files unless you choose to set
+`local_backend_checkpoint_path` for local vision embedding.
 
 ## Troubleshooting (ComfyUI)
 
@@ -104,12 +125,17 @@ If you cannot see `run_backend` / `backend_mode` in `Character Reference Analyze
    - use `backend_mode=local_vision`
 2. `Apply Character Consistency [Modular v2]`
    - connect `character_identity`
-   - optional: connect current generated image to `current_image`
    - tune `hair_color_deltae_threshold`
 3. `Consistency Debug Viewer [Modular v2]`
    - input `backend_report_json` from analyzer
-   - input `debug_report_json` from apply node
-   - read `summary_text` / `hair_deltae_status`
+   - input `debug_report_json` from apply node (config)
+   - input `current_image` from `VAEDecode`
+   - set `save_to_file=true`, `filename_prefix`, `run_tag`
+   - read `summary_text` / `hair_deltae_status` / output `debug_report_json` / `saved_path`
+
+Important:
+- Do not connect `VAEDecode` image back into `Apply Character Consistency`.
+- Image-based deltaE evaluation now lives in `Consistency Debug Viewer`, avoiding graph cycles.
 
 ## Suggested Incremental Roadmap
 

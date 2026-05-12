@@ -12,6 +12,20 @@ from .models import CharacterIdentity
 
 
 class CharacterReferenceAnalyzer:
+    @staticmethod
+    def _hair_family_to_prompt(family_label: str) -> str:
+        t = str(family_label or "").strip().lower()
+        if not t:
+            return ""
+        # expected like "mid-vivid-violet"
+        parts = [p for p in t.split("-") if p]
+        if len(parts) >= 3:
+            tone, chroma, base = parts[0], parts[1], parts[2]
+            return f"{chroma} {base} hair, {tone} tone"
+        if len(parts) == 1:
+            return f"{parts[0]} hair"
+        return " ".join(parts) + " hair"
+
     @classmethod
     def INPUT_TYPES(cls):
         return {
@@ -37,6 +51,7 @@ class CharacterReferenceAnalyzer:
                 "run_backend": ("BOOLEAN", {"default": False}),
                 "local_backend_model_name": ("STRING", {"default": "vit_base_patch16_224", "multiline": False}),
                 "local_backend_use_pretrained": ("BOOLEAN", {"default": False}),
+                "local_backend_checkpoint_path": ("STRING", {"default": "", "multiline": False}),
                 "remote_api_url": ("STRING", {"default": "", "multiline": False}),
                 "remote_api_key": ("STRING", {"default": "", "multiline": False}),
                 "remote_api_model": ("STRING", {"default": "gpt-4.1-mini", "multiline": False}),
@@ -88,6 +103,7 @@ class CharacterReferenceAnalyzer:
         run_backend: bool,
         local_backend_model_name: str,
         local_backend_use_pretrained: bool,
+        local_backend_checkpoint_path: str,
         remote_api_url: str,
         remote_api_key: str,
         remote_api_model: str,
@@ -120,6 +136,7 @@ class CharacterReferenceAnalyzer:
             palette=palette,
             local_model_name=local_backend_model_name,
             local_use_pretrained=local_backend_use_pretrained,
+            local_checkpoint_path=local_backend_checkpoint_path,
             remote_api_url=remote_api_url,
             remote_api_key=remote_api_key,
             remote_api_model=remote_api_model,
@@ -169,6 +186,16 @@ class CharacterReferenceAnalyzer:
             mod = module_constraints[module_name]
             if mod.get("enabled"):
                 prompt_parts.extend(mod.get("tags", []))
+
+        # Add human-readable hair color hint derived from backend profile.
+        hair_profile = to_dict(backend_report.get("hair_color_profile", {}))
+        hair_family = str(hair_profile.get("primary_family", "")).strip()
+        hair_hex = str(hair_profile.get("primary_hex", "")).strip()
+        hair_prompt = self._hair_family_to_prompt(hair_family)
+        if hair_prompt:
+            prompt_parts.append(hair_prompt)
+        if hair_hex:
+            prompt_parts.append(f"hair color {hair_hex}")
         character_prompt = ", ".join(prompt_parts)
 
         face_crop_hint = "auto_face_crop_pending" if use_face_module else "face_module_disabled"
@@ -184,4 +211,3 @@ class CharacterReferenceAnalyzer:
             ",".join(palette),
             json.dumps(backend_report, ensure_ascii=False),
         )
-

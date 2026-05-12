@@ -1,12 +1,8 @@
 from __future__ import annotations
 
 import json
-import math
 from typing import List
 
-import torch
-
-from .color_features import extract_hair_color_profile
 from .core_utils import append_note_to_conditioning, clamp01, to_dict
 
 
@@ -22,13 +18,6 @@ def _lab_from_hair_profile(profile: dict):
         except Exception:
             return None
     return None
-
-
-def _delta_e76(lab1, lab2) -> float:
-    dl = float(lab1[0]) - float(lab2[0])
-    da = float(lab1[1]) - float(lab2[1])
-    db = float(lab1[2]) - float(lab2[2])
-    return float(math.sqrt(dl * dl + da * da + db * db))
 
 
 class ApplyCharacterConsistency:
@@ -55,10 +44,6 @@ class ApplyCharacterConsistency:
                 "enable_hair_color_deltae_constraint": ("BOOLEAN", {"default": True}),
                 "hair_color_deltae_threshold": ("FLOAT", {"default": 18.0, "min": 0.0, "max": 120.0, "step": 0.1}),
                 "hair_color_deltae_softness": ("FLOAT", {"default": 8.0, "min": 0.1, "max": 50.0, "step": 0.1}),
-            }
-            ,
-            "optional": {
-                "current_image": ("IMAGE",),
             },
         }
 
@@ -88,7 +73,6 @@ class ApplyCharacterConsistency:
         enable_hair_color_deltae_constraint: bool,
         hair_color_deltae_threshold: float,
         hair_color_deltae_softness: float,
-        current_image: torch.Tensor = None,
     ):
         module_defaults = to_dict(character_identity).get("module_constraints", {})
         module_switches = {
@@ -130,24 +114,8 @@ class ApplyCharacterConsistency:
         backend_report = to_dict(backend_report)
         target_hair_profile = to_dict(backend_report.get("hair_color_profile", {}))
         target_lab = _lab_from_hair_profile(target_hair_profile)
-        current_hair_profile = {}
-        current_lab = None
-        if current_image is not None:
-            current_hair_profile = extract_hair_color_profile(current_image, top_k=4)
-            current_lab = _lab_from_hair_profile(current_hair_profile)
-
-        deltae_value = None
-        if target_lab is not None and current_lab is not None:
-            deltae_value = _delta_e76(target_lab, current_lab)
-
         threshold = max(0.0, float(hair_color_deltae_threshold))
         softness = max(0.1, float(hair_color_deltae_softness))
-        pass_flag = None
-        penalty = 0.0
-        if deltae_value is not None:
-            pass_flag = deltae_value <= threshold
-            over = max(0.0, deltae_value - threshold)
-            penalty = over / (over + softness) if over > 0.0 else 0.0
 
         hair_color_constraint = {
             "enabled": bool(enable_hair_color_deltae_constraint),
@@ -158,31 +126,26 @@ class ApplyCharacterConsistency:
                 "a": round(target_lab[1], 4),
                 "b": round(target_lab[2], 4),
             } if target_lab is not None else None,
-            "current_lab": {
-                "l": round(current_lab[0], 4),
-                "a": round(current_lab[1], 4),
-                "b": round(current_lab[2], 4),
-            } if current_lab is not None else None,
-            "deltae": round(deltae_value, 4) if deltae_value is not None else None,
-            "pass": pass_flag,
-            "penalty": round(penalty, 6),
-            "status": "ok" if deltae_value is not None else "missing_target_or_current_image",
+            "current_lab": None,
+            "deltae": None,
+            "pass": None,
+            "penalty": 0.0,
+            "status": "deferred_to_debug_viewer",
         }
 
         if bool(enable_hair_color_deltae_constraint):
             hair_mod = to_dict(module_constraints.get("hair", {}))
             base_strength = float(hair_mod.get("strength", 0.0))
-            adjusted_strength = clamp01(base_strength * (1.0 + penalty * 0.35))
             hair_mod["strength_base"] = round(base_strength, 6)
-            hair_mod["strength"] = round(adjusted_strength, 6)
+            hair_mod["strength"] = round(base_strength, 6)
             hair_mod["color_deltae"] = hair_color_constraint
             module_constraints["hair"] = hair_mod
 
         debug_report = {
-            "mode": "character_lock_debug",
+            "mode": "character_lock_debug_config",
             "hair_color_constraint": hair_color_constraint,
             "target_hair_profile": target_hair_profile,
-            "current_hair_profile": current_hair_profile,
+            "current_hair_profile": {},
         }
 
         note = {
@@ -200,10 +163,7 @@ class ApplyCharacterConsistency:
         }
         out = append_note_to_conditioning(conditioning, note)
         enabled_text = "+".join(enabled_modules) if enabled_modules else "none"
-        adapter_state = f"character_backend_placeholder:{enabled_text}"
-        if deltae_value is not None:
-            adapter_state += f":hair_deltae={round(deltae_value, 3)}"
-        return out, adapter_state, json.dumps(debug_report, ensure_ascii=False)
+        return out, f"character_backend_placeholder:{enabled_text}", json.dumps(debug_report, ensure_ascii=False)
 
 
 class ApplyStyleConsistency:
