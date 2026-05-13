@@ -36,6 +36,11 @@ It is designed so we can iteratively replace placeholder logic with methods insp
 - `Apply Character Consistency`
 - `Apply Style Consistency`
 - `Character + Style Controller`
+- `LoRA Dataset Inspector [Traditional v1]`
+- `LoRA Caption Validator [Traditional v1]`
+- `LoRA Train Config Builder [Traditional v1]`
+- `LoRA Train Launcher [Traditional v1]`
+- `LoRA Artifact Indexer [Traditional v1]`
 
 ## Current Behavior
 
