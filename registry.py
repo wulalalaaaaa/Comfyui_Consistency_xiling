@@ -10,6 +10,7 @@ from .nodes_lora import (
     LoRATrainConfigBuilder,
     LoRATrainLauncher,
 )
+from .nodes_lora_fast import LoRAQuickConfigBuilder, LoRAQuickDatasetPreparer
 from .nodes_prompt import CharacterConstraintPromptComposer
 from .nodes_style import StyleReferenceAnalyzer
 
@@ -27,6 +28,8 @@ NODE_CLASS_MAPPINGS = {
     "LoRATrainConfigBuilder": LoRATrainConfigBuilder,
     "LoRATrainLauncher": LoRATrainLauncher,
     "LoRAArtifactIndexer": LoRAArtifactIndexer,
+    "LoRAQuickDatasetPreparer": LoRAQuickDatasetPreparer,
+    "LoRAQuickConfigBuilder": LoRAQuickConfigBuilder,
 }
 
 
@@ -43,4 +46,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "LoRATrainConfigBuilder": "LoRA Train Config Builder [Traditional v1]",
     "LoRATrainLauncher": "LoRA Train Launcher [Traditional v1]",
     "LoRAArtifactIndexer": "LoRA Artifact Indexer [Traditional v1]",
+    "LoRAQuickDatasetPreparer": "LoRA Quick Dataset Preparer [Fast v1]",
+    "LoRAQuickConfigBuilder": "LoRA Quick Config Builder [Fast v1]",
 }

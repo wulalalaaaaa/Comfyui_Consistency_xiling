@@ -4,6 +4,7 @@ import json
 import os
 import re
 import subprocess
+import sys
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -357,13 +358,17 @@ class LoRATrainConfigBuilder:
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 128, "step": 1}),
                 "max_train_steps": ("INT", {"default": 1600, "min": 1, "max": 2000000, "step": 1}),
                 "save_every_n_steps": ("INT", {"default": 200, "min": 1, "max": 100000, "step": 1}),
-                "seed": ("INT", {"default": 42, "min": -9223372036854775807, "max": 9223372036854775807, "step": 1}),
+                "seed": ("INT", {"default": 42, "min": 0, "max": 4294967295, "step": 1}),
                 "train_unet": ("BOOLEAN", {"default": True}),
                 "train_text_encoder": ("BOOLEAN", {"default": True}),
                 "mixed_precision": (["fp16", "bf16", "no"],),
                 "save_config_to_file": ("BOOLEAN", {"default": True}),
                 "config_filename_prefix": ("STRING", {"default": "lora_train_config", "multiline": False}),
                 "extra_args_json": ("STRING", {"default": "{}", "multiline": True}),
+                "enable_bucket": ("BOOLEAN", {"default": True}),
+                "bucket_reso_steps": ("INT", {"default": 64, "min": 8, "max": 512, "step": 8}),
+                "min_bucket_reso": ("INT", {"default": 512, "min": 64, "max": 4096, "step": 8}),
+                "max_bucket_reso": ("INT", {"default": 1024, "min": 64, "max": 8192, "step": 8}),
             }
         }
 
@@ -395,6 +400,10 @@ class LoRATrainConfigBuilder:
         save_config_to_file: bool,
         config_filename_prefix: str,
         extra_args_json: str,
+        enable_bucket: bool,
+        bucket_reso_steps: int,
+        min_bucket_reso: int,
+        max_bucket_reso: int,
     ):
         base_model = os.path.abspath(os.path.expanduser(str(base_model_path or "").strip()))
         data_dir = os.path.abspath(os.path.expanduser(str(dataset_dir or "").strip()))
@@ -411,6 +420,14 @@ class LoRATrainConfigBuilder:
         extra_args = extract_json_object(extra_args_json)
         if not isinstance(extra_args, dict):
             extra_args = {}
+        if bool(enable_bucket):
+            extra_args["enable_bucket"] = True
+            extra_args["bucket_reso_steps"] = int(bucket_reso_steps)
+            extra_args["min_bucket_reso"] = int(min_bucket_reso)
+            extra_args["max_bucket_reso"] = int(max_bucket_reso)
+        else:
+            for k in ("enable_bucket", "bucket_reso_steps", "min_bucket_reso", "max_bucket_reso"):
+                extra_args.pop(k, None)
 
         sdxl_lora_config: Dict[str, Any] = {
             "schema_version": "1.0",
@@ -525,6 +542,14 @@ class LoRATrainLauncher:
                 "log_filename_prefix": ("STRING", {"default": "lora_train", "multiline": False}),
                 "timeout_s": ("INT", {"default": 3600, "min": 10, "max": 604800, "step": 1}),
                 "recursive_scan_ckpt": ("BOOLEAN", {"default": True}),
+                "command_mode": (["use_input_command", "rebuild_from_config"],),
+                "trainer_script_mode": (["auto", "train_network.py", "sdxl_train_network.py"],),
+                "trainer_script_path": ("STRING", {"default": "", "multiline": False}),
+                "rebuild_style": (["direct_cli", "config_file"],),
+                "runtime_mode": (["auto", "native_accelerate", "custom_deps_runner"],),
+                "python_executable_path": ("STRING", {"default": "", "multiline": False}),
+                "custom_deps_dir": ("STRING", {"default": "", "multiline": False}),
+                "custom_runner_script_path": ("STRING", {"default": "", "multiline": False}),
             }
         }
 
@@ -544,6 +569,14 @@ class LoRATrainLauncher:
         log_filename_prefix: str,
         timeout_s: int,
         recursive_scan_ckpt: bool,
+        command_mode: str,
+        trainer_script_mode: str,
+        trainer_script_path: str,
+        rebuild_style: str,
+        runtime_mode: str,
+        python_executable_path: str,
+        custom_deps_dir: str,
+        custom_runner_script_path: str,
     ):
         parsed_cfg = extract_json_object(config_json)
         resolved_cfg_path = os.path.abspath(os.path.expanduser(str(config_path or "").strip())) if config_path else ""
@@ -574,8 +607,116 @@ class LoRATrainLauncher:
         os.makedirs(resolved_log_dir, exist_ok=True)
 
         cmd = str(launch_command or "").strip()
+        use_rebuild = str(command_mode or "").strip() == "rebuild_from_config"
         temp_cfg_path = ""
-        if not cmd:
+
+        def _infer_script_name_from_cfg(cfg: Dict[str, Any]) -> str:
+            if str(trainer_script_mode or "").strip() in ("train_network.py", "sdxl_train_network.py"):
+                return str(trainer_script_mode).strip()
+            base_model_path = ""
+            if isinstance(cfg, dict):
+                p = cfg.get("paths", {})
+                if isinstance(p, dict):
+                    base_model_path = str(p.get("pretrained_model_name_or_path", ""))
+            t = base_model_path.lower()
+            if any(k in t for k in ("sdxl", "noobxl", "xl")):
+                return "sdxl_train_network.py"
+            return "train_network.py"
+
+        def _resolve_script_path(cfg: Dict[str, Any]) -> str:
+            user_script = str(trainer_script_path or "").strip()
+            if user_script:
+                return os.path.abspath(os.path.expanduser(user_script))
+            script_name = _infer_script_name_from_cfg(cfg)
+            return os.path.join(resolved_workdir, script_name)
+
+        def _build_direct_cli_args(cfg: Dict[str, Any]) -> List[str]:
+            c = cfg if isinstance(cfg, dict) else {}
+            paths = c.get("paths", {})
+            network = c.get("network", {})
+            opt = c.get("optimization", {})
+            extra = c.get("extra_args", {})
+            if not isinstance(paths, dict):
+                paths = {}
+            if not isinstance(network, dict):
+                network = {}
+            if not isinstance(opt, dict):
+                opt = {}
+            if not isinstance(extra, dict):
+                extra = {}
+
+            base_model = str(paths.get("pretrained_model_name_or_path", "")).strip()
+            train_data_dir = str(paths.get("train_data_dir", "")).strip()
+            out = str(paths.get("output_dir", "")).strip() or output_dir
+            network_module = str(network.get("network_module", "networks.lora")).strip() or "networks.lora"
+            dim = int(network.get("network_dim", 16))
+            alpha = int(network.get("network_alpha", dim))
+            train_unet_flag = bool(network.get("train_unet", True))
+            train_te_flag = bool(network.get("train_text_encoder", True))
+
+            optimizer = str(opt.get("optimizer_type", "AdamW8bit")).strip() or "AdamW8bit"
+            scheduler = str(opt.get("lr_scheduler", "cosine")).strip() or "cosine"
+            unet_lr = float(opt.get("unet_lr", 1e-4))
+            te_lr = float(opt.get("text_encoder_lr", 5e-6))
+            batch = int(opt.get("train_batch_size", 1))
+            steps = int(opt.get("max_train_steps", 1600))
+            save_every = int(opt.get("save_every_n_steps", 200))
+            seed = int(opt.get("seed", 42))
+            mixed = str(opt.get("mixed_precision", "fp16")).strip() or "fp16"
+            resolution = str(opt.get("resolution", "1024,1024")).strip() or "1024,1024"
+
+            args = [
+                f"--pretrained_model_name_or_path {_q(base_model)}",
+                f"--train_data_dir {_q(train_data_dir)}",
+                f"--output_dir {_q(out)}",
+                f"--network_module {_q(network_module)}",
+                f"--network_dim {dim}",
+                f"--network_alpha {alpha}",
+                f"--optimizer_type {_q(optimizer)}",
+                f"--lr_scheduler {_q(scheduler)}",
+                f"--unet_lr {unet_lr}",
+                f"--text_encoder_lr {te_lr}",
+                f"--train_batch_size {batch}",
+                f"--max_train_steps {steps}",
+                f"--save_every_n_steps {save_every}",
+                f"--seed {seed}",
+                f"--mixed_precision {_q(mixed)}",
+                f"--resolution {_q(resolution)}",
+            ]
+
+            if train_unet_flag and not train_te_flag:
+                args.append("--network_train_unet_only")
+            if train_te_flag and not train_unet_flag:
+                args.append("--network_train_text_encoder_only")
+
+            for key, value in extra.items():
+                k = str(key).strip()
+                if not k:
+                    continue
+                if isinstance(value, bool):
+                    if value:
+                        args.append(f"--{k}")
+                elif value is None:
+                    continue
+                else:
+                    args.append(f"--{k} {_q(value)}")
+            return args
+
+        def _resolve_runtime_mode() -> str:
+            mode = str(runtime_mode or "").strip()
+            if mode in ("native_accelerate", "custom_deps_runner"):
+                return mode
+            default_deps = os.path.join(os.path.dirname(__file__), "_deps", "sdscripts")
+            default_runner = os.path.join(os.path.dirname(__file__), "run_with_deps.py")
+            if os.path.isdir(default_deps) and os.path.isfile(default_runner):
+                return "custom_deps_runner"
+            return "native_accelerate"
+
+        if not cmd or use_rebuild:
+            script_path = _resolve_script_path(parsed_cfg)
+            effective_runtime_mode = _resolve_runtime_mode()
+            effective_rebuild_style = str(rebuild_style or "").strip() or "direct_cli"
+
             if resolved_cfg_path and os.path.isfile(resolved_cfg_path):
                 temp_cfg_path = resolved_cfg_path
             elif parsed_cfg:
@@ -583,8 +724,23 @@ class LoRATrainLauncher:
                 temp_cfg_path = os.path.join(output_dir, f"lora_runtime_config_{ts}.json")
                 with open(temp_cfg_path, "w", encoding="utf-8") as f:
                     json.dump(parsed_cfg, f, ensure_ascii=False, indent=2)
-            if temp_cfg_path:
-                cmd = f"accelerate launch train_network.py --config_file {_q(temp_cfg_path)}"
+
+            script_args: List[str] = []
+            if effective_rebuild_style == "config_file" and temp_cfg_path:
+                script_args = [f"--config_file {_q(temp_cfg_path)}"]
+            else:
+                script_args = _build_direct_cli_args(parsed_cfg)
+
+            if effective_runtime_mode == "custom_deps_runner":
+                py = str(python_executable_path or "").strip() or sys.executable
+                deps = str(custom_deps_dir or "").strip() or os.path.join(os.path.dirname(__file__), "_deps", "sdscripts")
+                runner = str(custom_runner_script_path or "").strip() or os.path.join(os.path.dirname(__file__), "run_with_deps.py")
+                py = os.path.abspath(os.path.expanduser(py))
+                deps = os.path.abspath(os.path.expanduser(deps))
+                runner = os.path.abspath(os.path.expanduser(runner))
+                cmd = f"{_q(py)} {_q(runner)} --deps {_q(deps)} --script {_q(script_path)} -- {' '.join(script_args)}"
+            else:
+                cmd = f"accelerate launch {_q(script_path)} {' '.join(script_args)}"
 
         if not cmd:
             report = {
@@ -602,6 +758,14 @@ class LoRATrainLauncher:
         report: Dict[str, Any] = {
             "status": "ready",
             "execute": bool(execute),
+            "command_mode": str(command_mode or "").strip() or "use_input_command",
+            "trainer_script_mode": str(trainer_script_mode or "").strip() or "auto",
+            "trainer_script_path": str(trainer_script_path or "").strip(),
+            "rebuild_style": str(rebuild_style or "").strip() or "direct_cli",
+            "runtime_mode": str(runtime_mode or "").strip() or "auto",
+            "python_executable_path": str(python_executable_path or "").strip(),
+            "custom_deps_dir": str(custom_deps_dir or "").strip(),
+            "custom_runner_script_path": str(custom_runner_script_path or "").strip(),
             "working_dir": resolved_workdir,
             "output_dir": output_dir,
             "log_dir": resolved_log_dir,

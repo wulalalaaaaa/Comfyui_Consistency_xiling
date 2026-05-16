@@ -1,0 +1,17 @@
+lion_pytorch-0.2.3.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+lion_pytorch-0.2.3.dist-info/LICENSE,sha256=JCo3d2HvOFPGYvaXfnYX4-qjRyQvVElop5ZRITXMg-U,1066
+lion_pytorch-0.2.3.dist-info/METADATA,sha256=Xj2eMx_Uf6EkpARbzWKkAIBlADy0aUULU82kYqCI0ws,616
+lion_pytorch-0.2.3.dist-info/RECORD,,
+lion_pytorch-0.2.3.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+lion_pytorch-0.2.3.dist-info/WHEEL,sha256=PZUExdf71Ui_so67QXpySuHtCi3-J3wvF4ORK6k_S8U,91
+lion_pytorch-0.2.3.dist-info/top_level.txt,sha256=TVA0RlPJSEOmPVITAL-ohRa3MC4dzRwthjclG3RnM3U,13
+lion_pytorch/__init__.py,sha256=10qKcx4WZEkjhQtzz_g3WsceYPGwZwy656mQIj7EAE4,43
+lion_pytorch/__pycache__/__init__.cpython-313.pyc,,
+lion_pytorch/__pycache__/cautious_lion.cpython-313.pyc,,
+lion_pytorch/__pycache__/foreach.cpython-313.pyc,,
+lion_pytorch/__pycache__/lion_pytorch.cpython-313.pyc,,
+lion_pytorch/__pycache__/triton.cpython-313.pyc,,
+lion_pytorch/cautious_lion.py,sha256=sSABtmvScX_ESevktdrL4Jv2EZjXdqKSBZcZyQl-PX0,2591
+lion_pytorch/foreach.py,sha256=E9i-FOPGVHcP9_ZxEeQXDXVtGn9QzqZwxGqXQQ0qmkQ,2527
+lion_pytorch/lion_pytorch.py,sha256=RGMidEW8TiJwWBKP1YlzLbl73lfxu75taQOVpfsXXlY,2445
+lion_pytorch/triton.py,sha256=pAxbEcCJBxEY-slvJw2LGSzccGZMDYsYCycwzOeCUv8,2094

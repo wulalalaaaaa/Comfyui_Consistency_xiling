@@ -1,0 +1,13 @@
+prodigyopt-1.1.2.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+prodigyopt-1.1.2.dist-info/LICENSE,sha256=-NFGgXFskSUvXQZsFdwVHw9825mzBqj-5eW749q5EIM,1078
+prodigyopt-1.1.2.dist-info/METADATA,sha256=9rNQ_uoXPAgb-3MBS1TkZ3d0wS0xsFDo0QudV-VjLZA,4776
+prodigyopt-1.1.2.dist-info/RECORD,,
+prodigyopt-1.1.2.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+prodigyopt-1.1.2.dist-info/WHEEL,sha256=In9FTNxeP60KnTkGw7wk6mJPYd_dQSjEZmXdBdMCI-8,91
+prodigyopt-1.1.2.dist-info/top_level.txt,sha256=UHicLcrKXF0FrUoXLbq4Gj_PJiD6KYnON3ArwwuFPh0,11
+prodigyopt/__init__.py,sha256=Hn5qFhmECKsGadGaXhSwGtjggNdXnD1oW7KR-Id3SQc,29
+prodigyopt/__pycache__/__init__.cpython-313.pyc,,
+prodigyopt/__pycache__/prodigy.cpython-313.pyc,,
+prodigyopt/__pycache__/prodigy_reference.cpython-313.pyc,,
+prodigyopt/prodigy.py,sha256=7HekalNXuEy9HmtLjGT_1Qq6GCJX9i0gO38KYdtI7vI,10431
+prodigyopt/prodigy_reference.py,sha256=pSh5qJWEmi4wAPRBLfzy0rREHgCCss63A9uB2iSFc-I,9754
