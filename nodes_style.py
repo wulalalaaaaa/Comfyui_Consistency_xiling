@@ -24,7 +24,7 @@ class StyleReferenceAnalyzer:
     RETURN_TYPES = ("STYLE_IDENTITY", "STRING", "STRING", "STRING", "STRING")
     RETURN_NAMES = ("style_identity", "style_prompt", "palette_csv", "line_hint", "texture_hint")
     FUNCTION = "analyze"
-    CATEGORY = "AnimeConsistency/Style"
+    CATEGORY = "xiling_anime_Consistency/Style"
 
     def analyze(
         self,
@@ -56,4 +56,3 @@ class StyleReferenceAnalyzer:
             "lineart_thickness_pending",
             "texture_detail_pending",
         )
-

@@ -47,8 +47,8 @@ class CharacterReferenceAnalyzer:
                 "outfit_tags_csv": ("STRING", {"default": "", "multiline": False}),
                 "body_tags_csv": ("STRING", {"default": "", "multiline": False}),
                 "accessory_tags_csv": ("STRING", {"default": "", "multiline": False}),
-                "backend_mode": (["placeholder", "local_vision", "remote_api"],),
-                "run_backend": ("BOOLEAN", {"default": False}),
+                "backend_mode": (["local_vision", "placeholder", "remote_api"],),
+                "run_backend": ("BOOLEAN", {"default": True}),
                 "local_backend_model_name": ("STRING", {"default": "vit_base_patch16_224", "multiline": False}),
                 "local_backend_use_pretrained": ("BOOLEAN", {"default": False}),
                 "local_backend_checkpoint_path": ("STRING", {"default": "", "multiline": False}),
@@ -78,7 +78,7 @@ class CharacterReferenceAnalyzer:
         "backend_report_json",
     )
     FUNCTION = "analyze"
-    CATEGORY = "AnimeConsistency/Character"
+    CATEGORY = "xiling_anime_Consistency/Character"
 
     def analyze(
         self,

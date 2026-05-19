@@ -24,14 +24,12 @@ It is designed so we can iteratively replace placeholder logic with methods insp
 - `nodes_debug.py`: debug viewer node for JSON reports and direct file save.
 - `nodes_prompt.py`: strong constraint prompt composer with per-module bool switches.
 - `nodes_lora.py`: traditional LoRA workflow nodes (inspect/validate/config/launch/index).
-- `nodes_lora_fast.py`: quick LoRA workflow nodes (single-image/few-image fast path).
 - `backends.py`: local vision + remote API backend logic.
 - `color_features.py`: structured color analysis (hair profile).
 - `core_utils.py`: shared helpers.
 - `models.py`: dataclass schemas.
 - `LORA_NODE_DEVELOPMENT.md`: standalone LoRA training-node development brief.
 - `LORA_TRAINING_PARAMETERS_AND_RUNBOOK.md`: traditional training parameters and step-by-step runbook.
-- `LORA_FAST_NODE_PLAN_AND_USAGE.md`: fast/single-image LoRA node plan and usage.
 
 ## Node List
 
@@ -45,8 +43,6 @@ It is designed so we can iteratively replace placeholder logic with methods insp
 - `LoRA Train Config Builder [Traditional v1]`
 - `LoRA Train Launcher [Traditional v1]`
 - `LoRA Artifact Indexer [Traditional v1]`
-- `LoRA Quick Dataset Preparer [Fast v1]`
-- `LoRA Quick Config Builder [Fast v1]`
 
 ## Current Behavior
 
@@ -167,8 +163,8 @@ Important:
 
 Place this folder under ComfyUI custom nodes directory, e.g.:
 
-`ComfyUI/custom_nodes/ComfyNode`
+`ComfyUI/custom_nodes/xiling_anime_Consistency`
 
 Then restart ComfyUI and search category:
 
-`AnimeConsistency/*`
+`xiling_anime_Consistency/*`

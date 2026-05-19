@@ -162,7 +162,7 @@ class LoRADatasetInspector:
     RETURN_TYPES = ("INT", "STRING", "INT", "BOOLEAN", "STRING")
     RETURN_NAMES = ("image_count", "min_resolution_found", "invalid_file_count", "passed", "report_json")
     FUNCTION = "inspect"
-    CATEGORY = "AnimeConsistency/LoRA"
+    CATEGORY = "xiling_anime_Consistency/LoRA"
 
     def inspect(self, dataset_dir: str, min_width: int, min_height: int, min_image_count: int):
         data_dir = os.path.abspath(os.path.expanduser(str(dataset_dir or "").strip()))
@@ -248,7 +248,7 @@ class LoRACaptionValidator:
     RETURN_TYPES = ("INT", "INT", "FLOAT", "BOOLEAN", "STRING")
     RETURN_NAMES = ("image_count", "missing_caption_count", "trigger_coverage", "passed", "report_json")
     FUNCTION = "validate"
-    CATEGORY = "AnimeConsistency/LoRA"
+    CATEGORY = "xiling_anime_Consistency/LoRA"
 
     def validate(self, image_dir: str, caption_dir: str, trigger_word: str, min_caption_chars: int):
         resolved_image_dir = os.path.abspath(os.path.expanduser(str(image_dir or "").strip()))
@@ -375,7 +375,7 @@ class LoRATrainConfigBuilder:
     RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING")
     RETURN_NAMES = ("config_json", "launch_command", "config_path", "summary")
     FUNCTION = "build"
-    CATEGORY = "AnimeConsistency/LoRA"
+    CATEGORY = "xiling_anime_Consistency/LoRA"
 
     def build(
         self,
@@ -556,7 +556,7 @@ class LoRATrainLauncher:
     RETURN_TYPES = ("STRING", "STRING", "STRING", "STRING", "STRING")
     RETURN_NAMES = ("status", "launch_command", "train_log_path", "latest_checkpoint", "launcher_report_json")
     FUNCTION = "launch"
-    CATEGORY = "AnimeConsistency/LoRA"
+    CATEGORY = "xiling_anime_Consistency/LoRA"
 
     def launch(
         self,
@@ -848,7 +848,7 @@ class LoRAArtifactIndexer:
     RETURN_TYPES = ("STRING", "STRING", "INT", "STRING", "STRING")
     RETURN_NAMES = ("best_checkpoint", "latest_checkpoint", "checkpoint_count", "summary", "report_json")
     FUNCTION = "index"
-    CATEGORY = "AnimeConsistency/LoRA"
+    CATEGORY = "xiling_anime_Consistency/LoRA"
 
     def index(self, output_dir: str, recursive_scan: bool, max_list_items: int):
         resolved_output_dir = os.path.abspath(os.path.expanduser(str(output_dir or "").strip()))

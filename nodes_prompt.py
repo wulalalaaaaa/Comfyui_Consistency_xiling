@@ -46,6 +46,30 @@ def _dedupe_keep_order(items: List[str]) -> List[str]:
     return out
 
 
+def _build_global_character_anchor(
+    module_tag_map: Dict[str, List[str]],
+    preset: str,
+) -> str:
+    readable = {
+        "face": "face identity",
+        "hair": "hair silhouette",
+        "outfit": "outfit motif",
+        "body": "body silhouette",
+        "accessory": "accessory signature",
+    }
+    parts: List[str] = []
+    for module_name in ("face", "hair", "outfit", "body", "accessory"):
+        tags = module_tag_map.get(module_name, [])
+        if not tags:
+            continue
+        head = ", ".join(tags[:2])
+        parts.append(f"{readable.get(module_name, module_name)} ({head})")
+    if not parts:
+        return ""
+    anchor_weight = {"soft": 1.05, "medium": 1.20, "hard": 1.35}.get(preset, 1.20)
+    return f"(same character identity across {'; '.join(parts)}:{anchor_weight:.2f})"
+
+
 class CharacterConstraintPromptComposer:
     @classmethod
     def INPUT_TYPES(cls):
@@ -58,12 +82,13 @@ class CharacterConstraintPromptComposer:
                 "enable_outfit_constraint": ("BOOLEAN", {"default": True}),
                 "enable_body_constraint": ("BOOLEAN", {"default": True}),
                 "enable_accessory_constraint": ("BOOLEAN", {"default": False}),
-                "face_weight": ("FLOAT", {"default": 1.20, "min": 0.0, "max": 2.5, "step": 0.01}),
-                "hair_weight": ("FLOAT", {"default": 1.35, "min": 0.0, "max": 2.5, "step": 0.01}),
-                "outfit_weight": ("FLOAT", {"default": 1.25, "min": 0.0, "max": 2.5, "step": 0.01}),
-                "body_weight": ("FLOAT", {"default": 1.10, "min": 0.0, "max": 2.5, "step": 0.01}),
+                "face_weight": ("FLOAT", {"default": 1.30, "min": 0.0, "max": 2.5, "step": 0.01}),
+                "hair_weight": ("FLOAT", {"default": 1.20, "min": 0.0, "max": 2.5, "step": 0.01}),
+                "outfit_weight": ("FLOAT", {"default": 1.30, "min": 0.0, "max": 2.5, "step": 0.01}),
+                "body_weight": ("FLOAT", {"default": 1.25, "min": 0.0, "max": 2.5, "step": 0.01}),
                 "accessory_weight": ("FLOAT", {"default": 1.05, "min": 0.0, "max": 2.5, "step": 0.01}),
                 "constraint_strength_preset": (["soft", "medium", "hard"],),
+                "enable_global_character_anchor": ("BOOLEAN", {"default": True}),
                 "include_trigger_word": ("BOOLEAN", {"default": True}),
                 "include_hair_color_hint": ("BOOLEAN", {"default": True}),
                 "include_hair_hex_hint": ("BOOLEAN", {"default": False}),
@@ -74,7 +99,7 @@ class CharacterConstraintPromptComposer:
     RETURN_TYPES = ("STRING", "STRING")
     RETURN_NAMES = ("composed_prompt", "constraint_fragment")
     FUNCTION = "compose"
-    CATEGORY = "AnimeConsistency/Prompt"
+    CATEGORY = "xiling_anime_Consistency/Prompt"
 
     def compose(
         self,
@@ -91,6 +116,7 @@ class CharacterConstraintPromptComposer:
         body_weight: float,
         accessory_weight: float,
         constraint_strength_preset: str,
+        enable_global_character_anchor: bool,
         include_trigger_word: bool,
         include_hair_color_hint: bool,
         include_hair_hex_hint: bool,
@@ -108,6 +134,7 @@ class CharacterConstraintPromptComposer:
         ]
 
         fragments: List[str] = []
+        module_tag_map: Dict[str, List[str]] = {}
         base = str(base_prompt or "").strip()
         base_lower = base.lower()
         if bool(include_trigger_word):
@@ -127,6 +154,12 @@ class CharacterConstraintPromptComposer:
             phrase = _module_phrase(module_name, tags, final_weight)
             if phrase:
                 fragments.append(phrase)
+                module_tag_map[module_name] = tags
+
+        if bool(enable_global_character_anchor):
+            anchor_phrase = _build_global_character_anchor(module_tag_map, constraint_strength_preset)
+            if anchor_phrase:
+                fragments.insert(0, anchor_phrase)
 
         backend_report = to_dict(to_dict(identity.get("reference_embeddings", {})).get("backend_report", {}))
         hair_profile = to_dict(backend_report.get("hair_color_profile", {}))

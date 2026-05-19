@@ -1,0 +1,164 @@
+[周日 2026/05/17 18:32:58.22] ==============================
+[周日 2026/05/17 18:32:58.23] Start sync in E:\Project_python\Comfyui_Consistency_xiling
+[周日 2026/05/17 18:32:58.43] Current branch: xiling
+Already up to date.
+[周日 2026/05/17 18:33:00.49] Sync done.
+[周日 2026/05/17 18:40:08.58] Local sync done.
+[周日 2026/05/17 18:40:08.59] Start local sync in E:\Project_python\Comfyui_Consistency_xiling
+[周日 2026/05/17 18:40:08.59] Target directory: E:\draw\ComfyUI_windows_portable\ComfyUI\custom_nodes\Comfyui_Consistency_xiling
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : 2026年5月17日 18:40:08
+   Source - 
+     Dest - 
+
+    Files : 
+  Options : /DCOPY:DA /COPY:DAT /R:1000000 /W:30 
+
+------------------------------------------------------------------------------
+
+ERROR : Invalid Parameter #1 : "E:\Project_python\Comfyui_Consistency_xiling" E:\draw\ComfyUI_windows_portable\ComfyUI\custom_nodes\Comfyui_Consistency_xiling /E /XD .git __pycache__ /XF *.pyc *.bat sync_comfyui.log /R:2 /W:1 /NFL /NDL /NP "
+
+       Simple Usage :: ROBOCOPY source destination /MIR
+
+             source :: Source Directory (drive:\path or \\server\share\path).
+        destination :: Destination Dir  (drive:\path or \\server\share\path).
+               /MIR :: Mirror a complete directory tree.
+
+    For more usage information run ROBOCOPY /?
+
+                                                          
+****  /MIR can DELETE files as well as copy them !
+[周日 2026/05/17 18:40:08.65] [ERROR] robocopy failed. Check log for details.
+[周日 2026/05/17 18:40:41.79] ==============================
+[周日 2026/05/17 18:40:41.79] Start local sync in E:\Project_python\Comfyui_Consistency_xiling
+[周日 2026/05/17 18:40:41.80] Target directory: E:\draw\ComfyUI_windows_portable\ComfyUI\custom_nodes\Comfyui_Consistency_xiling
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : 2026年5月17日 18:40:41
+   Source : E:\Project_python\Comfyui_Consistency_xiling\
+     Dest : E:\draw\ComfyUI_windows_portable\ComfyUI\custom_nodes\Comfyui_Consistency_xiling\
+
+    Files : *.*
+	    
+Exc Files : sync_comfyui.log
+	    *.pyc
+	    *.bat
+	    
+ Exc Dirs : .git
+	    __pycache__
+	    
+  Options : *.* /NDL /NFL /S /E /DCOPY:DA /COPY:DAT /NP /R:2 /W:1 
+
+------------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :      2258         0      2258         0         0         0
+   Files :      8751         1      8750         0         0         0
+   Bytes :  477.92 m       650  477.92 m         0         0         0
+   Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+
+
+   Speed :              650000 Bytes/sec.
+   Speed :              37.193 MegaBytes/min.
+   Ended : 2026年5月17日 18:40:42
+
+[周日 2026/05/17 18:40:42.80] Copied files to E:\draw\ComfyUI_windows_portable\ComfyUI\custom_nodes\Comfyui_Consistency_xiling
+[周日 2026/05/17 18:40:42.81] Local sync done.
+[周日 2026/05/17 22:04:55.15] ==============================
+[周日 2026/05/17 22:04:55.16] Start local sync in E:\Project_python\Comfyui_Consistency_xiling
+[周日 2026/05/17 22:04:55.17] Target directory: E:\draw\ComfyUI_windows_portable\ComfyUI\custom_nodes\Comfyui_Consistency_xiling
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : 2026年5月17日 22:04:55
+   Source : E:\Project_python\Comfyui_Consistency_xiling\
+     Dest : E:\draw\ComfyUI_windows_portable\ComfyUI\custom_nodes\Comfyui_Consistency_xiling\
+
+    Files : *.*
+	    
+Exc Files : sync_comfyui.log
+	    *.pyc
+	    *.bat
+	    
+ Exc Dirs : .git
+	    __pycache__
+	    
+  Options : *.* /NDL /NFL /S /E /DCOPY:DA /COPY:DAT /NP /R:2 /W:1 
+
+------------------------------------------------------------------------------
+
+2026/05/17 22:04:55 ERROR 5 (0x00000005) Copying File E:\Project_python\Comfyui_Consistency_xiling\nodes_debug.py
+Access is denied.
+Waiting 1 seconds... Retrying...
+2026/05/17 22:04:56 ERROR 5 (0x00000005) Copying File E:\Project_python\Comfyui_Consistency_xiling\nodes_debug.py
+Access is denied.
+Waiting 1 seconds... Retrying...
+2026/05/17 22:04:57 ERROR 5 (0x00000005) Copying File E:\Project_python\Comfyui_Consistency_xiling\nodes_debug.py
+Access is denied.
+
+ERROR: RETRY LIMIT EXCEEDED.
+
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :      2258         0      2258         0         0         0
+   Files :      8751         0      8750         0         1         0
+   Bytes :  477.93 m         0  477.91 m         0    14.5 k         0
+   Times :   0:00:02   0:00:00                       0:00:02   0:00:00
+   Ended : 2026年5月17日 22:04:57
+
+[周日 2026/05/17 22:04:57.74] [ERROR] robocopy failed. Check log for details.
+[周二 2026/05/19 15:39:15.69] ==============================
+[周二 2026/05/19 15:39:15.71] Start local sync in E:\Project_python\Comfyui_Consistency_xiling
+[周二 2026/05/19 15:39:15.71] Target directory: E:\draw\ComfyUI_windows_portable\ComfyUI\custom_nodes\Comfyui_Consistency_xiling
+
+-------------------------------------------------------------------------------
+   ROBOCOPY     ::     Robust File Copy for Windows                              
+-------------------------------------------------------------------------------
+
+  Started : 2026年5月19日 15:39:15
+   Source : E:\Project_python\Comfyui_Consistency_xiling\
+     Dest : E:\draw\ComfyUI_windows_portable\ComfyUI\custom_nodes\Comfyui_Consistency_xiling\
+
+    Files : *.*
+	    
+Exc Files : sync_comfyui.log
+	    *.pyc
+	    *.bat
+	    
+ Exc Dirs : .git
+	    __pycache__
+	    
+  Options : *.* /NDL /NFL /S /E /DCOPY:DA /COPY:DAT /NP /R:2 /W:1 
+
+------------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------------
+
+               Total    Copied   Skipped  Mismatch    FAILED    Extras
+    Dirs :      2258         0      2258         0         0         0
+   Files :      8751         2      8749         0         0         0
+   Bytes :  477.93 m    39.8 k  477.89 m         0         0         0
+   Times :   0:00:01   0:00:00                       0:00:00   0:00:01
+
+
+   Speed :            20378500 Bytes/sec.
+   Speed :            1166.067 MegaBytes/min.
+   Ended : 2026年5月19日 15:39:16
+
+[周二 2026/05/19 15:39:16.78] Copied files to E:\draw\ComfyUI_windows_portable\ComfyUI\custom_nodes\Comfyui_Consistency_xiling
+[周二 2026/05/19 15:39:16.79] Local sync done.

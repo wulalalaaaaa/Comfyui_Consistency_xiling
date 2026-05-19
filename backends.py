@@ -9,7 +9,7 @@ from urllib import request as urlrequest
 
 import torch
 
-from .color_features import extract_hair_color_profile
+from .color_features import dominant_color_records, extract_hair_color_profile, filter_chromatic_pixels, region_pixels
 from .core_utils import (
     ensure_str_list,
     extract_json_object,
@@ -250,12 +250,32 @@ def run_local_vision_backend(
     use_pretrained: bool,
     checkpoint_path: str,
 ) -> Dict[str, Any]:
+    def _extract_region_profile(y0: float, y1: float, x0: float, x1: float, top_k: int = 3) -> Dict[str, Any]:
+        if reference_image is None or reference_image.numel() == 0:
+            return {"status": "empty_image", "dominant_colors": []}
+        sample = reference_image[0]
+        if sample.dim() != 3 or sample.shape[-1] != 3:
+            return {"status": "invalid_image_shape", "dominant_colors": []}
+        roi = region_pixels(sample, y0=y0, y1=y1, x0=x0, x1=x1)
+        roi_filtered = filter_chromatic_pixels(roi, min_s=0.08, min_v=0.08)
+        dominant = dominant_color_records(roi_filtered, top_k=max(1, int(top_k)))
+        primary = dominant[0] if dominant else {}
+        return {
+            "status": "ok" if dominant else "low_signal",
+            "roi": {"y0": y0, "y1": y1, "x0": x0, "x1": x1},
+            "pixel_count": int(roi_filtered.shape[0]) if roi_filtered is not None else 0,
+            "dominant_colors": dominant,
+            "primary_hex": str(primary.get("hex", "")),
+            "primary_family": str(primary.get("family_label", "")),
+        }
+
     palette = palette_from_image(reference_image, top_k=6)
     inferred_global_tags = []
     if palette:
         inferred_global_tags.append("color-stable-design")
     if character_name.strip():
         inferred_global_tags.append(f"character:{character_name.strip()}")
+    inferred_global_tags.append("same-character-identity")
 
     vit_report = try_vit_embedding_with_checkpoint(
         reference_image,
@@ -264,6 +284,8 @@ def run_local_vision_backend(
         checkpoint_path=checkpoint_path,
     )
     hair_color_profile = extract_hair_color_profile(reference_image, top_k=4)
+    eye_color_profile = _extract_region_profile(y0=0.24, y1=0.48, x0=0.28, x1=0.72, top_k=3)
+    outfit_color_profile = _extract_region_profile(y0=0.48, y1=0.96, x0=0.12, x1=0.88, top_k=4)
 
     module_tags: Dict[str, List[str]] = {}
     for module_name in ("face", "hair", "outfit", "body", "accessory"):
@@ -271,14 +293,35 @@ def run_local_vision_backend(
         base_tags = mod.get("tags", [])
         if not isinstance(base_tags, list):
             base_tags = []
-        inferred = [f"{module_name}_feature_pending"]
+        inferred: List[str] = []
+        if module_name == "face":
+            inferred.extend(["same face identity", "same eye shape"])
+            eye_hex = str(eye_color_profile.get("primary_hex", "")).strip()
+            eye_family = str(eye_color_profile.get("primary_family", "")).strip()
+            if eye_family:
+                inferred.append(f"eye_color_family:{eye_family}")
+            if eye_hex:
+                inferred.append(f"eye_color_hex:{eye_hex}")
         if module_name == "hair":
+            inferred.append("same hairstyle")
             primary_hex = str(hair_color_profile.get("primary_hex", "")).strip()
             primary_family = str(hair_color_profile.get("primary_family", "")).strip()
             if primary_hex:
                 inferred.append(f"hair_color_hex:{primary_hex}")
             if primary_family:
                 inferred.append(f"hair_color_family:{primary_family}")
+        if module_name == "outfit":
+            inferred.extend(["same outfit design", "same outfit color palette"])
+            outfit_hex = str(outfit_color_profile.get("primary_hex", "")).strip()
+            outfit_family = str(outfit_color_profile.get("primary_family", "")).strip()
+            if outfit_family:
+                inferred.append(f"outfit_color_family:{outfit_family}")
+            if outfit_hex:
+                inferred.append(f"outfit_color_hex:{outfit_hex}")
+        if module_name == "body":
+            inferred.append("same body silhouette")
+        if module_name == "accessory":
+            inferred.append("same accessories")
         module_tags[module_name] = merge_tags(base_tags, inferred)
 
     return {
@@ -289,6 +332,8 @@ def run_local_vision_backend(
         "global_tags": inferred_global_tags,
         "module_tags": module_tags,
         "hair_color_profile": hair_color_profile,
+        "eye_color_profile": eye_color_profile,
+        "outfit_color_profile": outfit_color_profile,
         "vit_embedding": vit_report,
         "confidence": "medium" if hair_color_profile.get("status") == "ok" else "low",
     }

@@ -1,7 +1,7 @@
 # ComfyUI Consistency 节点开发交接文档
 
 最后更新：2026-05-12  
-项目目录：`E:\Project_python\Comfyui_Consistency_xiling`
+项目目录：`E:\Project_python\xiling_anime_Consistency`
 
 ## 1. 项目目标（当前定义）
 
@@ -170,7 +170,7 @@
 
 可在新对话中直接输入：
 
-1. `项目路径是 E:\Project_python\Comfyui_Consistency_xiling，请先读取 DEVELOPMENT_HANDOFF.md 与 anime_consistency_nodes.py。`
+1. `项目路径是 E:\Project_python\xiling_anime_Consistency，请先读取 DEVELOPMENT_HANDOFF.md 与 anime_consistency_nodes.py。`
 2. `当前阶段从 P0/P1 开始，实现真实 backend 接口与 Character Lock 的第一版。`
 3. `每改完一步给出可在 ComfyUI 复现的最小测试工作流。`
 
@@ -182,4 +182,3 @@
 2. 风格提取必须防止角色内容泄漏。
 3. 组合模式必须允许角色与风格冲突时的显式策略选择。
 4. 先稳定接口，再逐步替换算法，避免一次性大改导致不可测。
-
